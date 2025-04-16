@@ -1,0 +1,158 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+// Définition d'un Noeud de l'arbre
+typedef struct Noeud {
+    int key;
+    struct Noeud *gauche, *droite;
+} Noeud;
+
+// Définition d'un élément de la file
+typedef struct Element {
+    Noeud *n;
+    struct Element *suiv;
+} Element;
+
+// Définition de la file
+typedef struct File {
+    Element *tete, *queue;
+    int nef;  // Nombre d'éléments dans la file
+} File;
+
+// Fonction pour créer un nouveau nœud
+Noeud* creerNoeud(int key) {
+    Noeud* nouveau = (Noeud*)malloc(sizeof(Noeud));
+    if (!nouveau) {
+        printf("Erreur d'allocation mémoire\n");
+        exit(EXIT_FAILURE);
+    }
+    nouveau->key = key;
+    nouveau->gauche = nouveau->droite = NULL;
+    return nouveau;
+}
+
+// Fonction pour insérer un nœud dans l'arbre (itératif)
+void insert(Noeud **racine, int key) {
+    Noeud *nouveau = creerNoeud(key);
+    if (*racine == NULL) {
+        *racine = nouveau;
+        return;
+    }
+
+    Noeud *courant = *racine, *prec = NULL;
+    while (courant != NULL) {
+        prec = courant;
+        if (key <= courant->key)
+            courant = courant->gauche;
+        else
+            courant = courant->droite;
+    }
+
+    if (key <= prec->key)
+        prec->gauche = nouveau;
+    else
+        prec->droite = nouveau;
+}
+
+// Fonction pour créer une file vide
+File* creerFile() {
+    File* F = (File*)malloc(sizeof(File));
+    if (!F) {
+        printf("Erreur d'allocation mémoire\n");
+        exit(EXIT_FAILURE);
+    }
+    F->tete = F->queue = NULL;
+    F->nef = 0;
+    return F;
+}
+
+// Fonction pour ajouter un élément à la file
+void ajoutFile(File *F, Noeud *n) {
+    if (n == NULL) return; // Ne pas ajouter de nœuds NULL
+
+    Element* nouvelElement = (Element*)malloc(sizeof(Element));
+    if (!nouvelElement) {
+        printf("Erreur d'allocation mémoire\n");
+        exit(EXIT_FAILURE);
+    }
+    nouvelElement->n = n;
+    nouvelElement->suiv = NULL;
+
+    if (F->queue == NULL) {
+        F->tete = F->queue = nouvelElement;
+    } else {
+        F->queue->suiv = nouvelElement;
+        F->queue = nouvelElement;
+    }
+    F->nef++;
+}
+
+// Fonction pour retirer un élément de la file
+Noeud* defiler(File *F) {
+    if (F->tete == NULL) return NULL;
+
+    Element* temp = F->tete;
+    Noeud* noeud = temp->n;
+    F->tete = F->tete->suiv;
+
+    if (F->tete == NULL) 
+        F->queue = NULL;
+
+    free(temp);
+    F->nef--;
+    return noeud;
+}
+
+// Fonction pour afficher l'arbre en parcours en largeur
+void parcoursLargeur(Noeud *racine) {
+    if (racine == NULL) {
+        printf("L'arbre est vide.\n");
+        return;
+    }
+
+    File *F = creerFile();
+    ajoutFile(F, racine);
+
+    printf("Parcours en largeur : ");
+    while (F->nef > 0) {
+        Noeud* courant = defiler(F);
+        printf("%d ", courant->key);
+
+        // Ajouter les enfants s'ils existent
+        if (courant->gauche) ajoutFile(F, courant->gauche);
+        if (courant->droite) ajoutFile(F, courant->droite);
+    }
+    printf("\n");
+
+    // Libérer la mémoire de la file
+    free(F);
+}
+
+// Fonction pour libérer la mémoire de l'arbre
+void libererArbre(Noeud *racine) {
+    if (racine == NULL) return;
+    libererArbre(racine->gauche);
+    libererArbre(racine->droite);
+    free(racine);
+}
+
+int main() {
+    Noeud *arbre = NULL;
+
+    // Insertion de quelques valeurs dans l'arbre
+    insert(&arbre, 10);
+    insert(&arbre, 15);
+    insert(&arbre, 5);
+    insert(&arbre, 3);
+    insert(&arbre, 12);
+    insert(&arbre, 7);
+    insert(&arbre, 17);
+
+    // Affichage du parcours en largeur
+    parcoursLargeur(arbre);
+
+    // Libération de la mémoire
+    libererArbre(arbre);
+    
+    return 0;
+}
